@@ -1,7 +1,6 @@
 import sys
 import json
-
-from datetime import datetime
+import base64
 
 def main(filename):
     names = ''
@@ -17,7 +16,11 @@ def main(filename):
 
     objects = [proc_line(names, spacings, l) for l in lines]
 
-    jobjects = json.dumps(objects)
+    for o in objects:
+        val = o['IsComplete']
+        o['IsComplete'] = bool(val)
+
+    jobjects = json.dumps(objects[:-1])
 
     print(jobjects)
 
@@ -44,6 +47,10 @@ def proc_line(names, spacings, line):
 
     for i in range(field_count):
         name = names[i]
+
+        if "Time" in name:
+            continue
+
         (start, end) = spacings[i]
 
         value = line[start:end].strip()
@@ -56,7 +63,13 @@ def proc_line(names, spacings, line):
 
 
 def try_parse(value):
-    types = [datetime, int, float]  # Add more types as needed
+    types = [int, float]  # Add more types as needed
+
+    if "NULL" == value:
+        return None
+
+    if '0x' in value:
+        return hex_to_byte_array(value)
 
     for type_ in types:
         try:
@@ -67,6 +80,23 @@ def try_parse(value):
             pass
 
     return value
+
+def hex_to_byte_array(value):
+    value = value[2:]
+
+    rv = []
+
+    for i in range(len(value)//2):
+        idx = i * 2
+        val = value[idx : idx + 2];
+
+        rv.append(int(val, 16))
+
+    dataStr = json.dumps(rv)
+
+    encoding = base64.b64encode(dataStr.encode('utf-8')).decode('utf-8')
+
+    return str(encoding)
 
 
 if __name__ == '__main__':
