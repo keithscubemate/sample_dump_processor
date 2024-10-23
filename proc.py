@@ -92,12 +92,17 @@ def hex_to_byte_array(value):
 
         rv.append(int(val, 16))
 
-    dataStr = json.dumps(rv)
+    # TODO(austin.jones): check if this is right
+    if len(rv) % 4 != 0:
+        padding = bytes([0 for _ in range(round_up(len(rv), 4))])
 
-    encoding = base64.b64encode(dataStr.encode('utf-8')).decode('utf-8')
+        rv += padding
 
-    return str(encoding)
+    encoding = base64.b64encode(bytes(rv)).decode('utf-8')
+    return encoding
 
+def round_up(val, n):
+    return n - (val % n)
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
